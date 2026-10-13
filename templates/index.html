@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Advisor System</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Segoe UI, Arial, sans-serif; background: #eef5f0; color: #17251f; }
+    header { background: #0e3b2c; color: #fff; padding: 24px 16px; text-align: center; }
+    header h1 { margin: 0 0 6px; font-size: 26px; }
+    header p { margin: 0; color: #cdebd8; }
+    main { max-width: 900px; margin: 24px auto; padding: 0 16px; display: grid; gap: 20px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 720px) { main { grid-template-columns: 1fr; } }
+    .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(14,59,44,.1); }
+    label { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 4px; }
+    input { width: 100%; padding: 10px; border: 1px solid #c9dccf; border-radius: 8px; font-size: 15px; }
+    button { margin-top: 18px; width: 100%; padding: 12px; background: #1e8a4c; color: #fff; border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #17703d; }
+    .standing { font-size: 24px; font-weight: 700; color: #1e8a4c; margin: 4px 0; }
+    .muted { color: #5a6b63; font-size: 14px; }
+    ul { padding-left: 20px; } li { margin-bottom: 8px; }
+    .error { color: #d93b3b; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Academic Advisor System</h1>
+    <p>CSC 303 · Chinedu Emmanuel Igbosopulu · Machine learning + rule-based advice</p>
+  </header>
+  <main>
+    <form class="card" id="form">
+      <h2>Your details</h2>
+      <label>Current CGPA (0 – 5)</label><input name="current_cgpa" type="number" step="0.01" min="0" max="5" value="3.80" required>
+      <label>Study hours per week</label><input name="study_hours" type="number" min="0" max="80" value="15" required>
+      <label>Lecture attendance (%)</label><input name="attendance" type="number" min="0" max="100" value="85" required>
+      <label>Assignments completed (%)</label><input name="assignment_completion" type="number" min="0" max="100" value="90" required>
+      <label>Course units this semester</label><input name="course_units" type="number" min="1" max="40" value="24" required>
+      <label>Sleep hours per night</label><input name="sleep_hours" type="number" step="0.5" min="0" max="14" value="6.5" required>
+      <label>Extracurricular hours per week</label><input name="extracurricular_hours" type="number" min="0" max="60" value="5" required>
+      <button type="submit">Get my advice</button>
+    </form>
+    <section class="card" id="result">
+      <h2>Your advice</h2>
+      <p class="muted">Fill in your details and click "Get my advice".</p>
+    </section>
+  </main>
+  <script>
+    document.getElementById("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const out = document.getElementById("result");
+      const data = Object.fromEntries(new FormData(e.target));
+      for (const k in data) data[k] = Number(data[k]);
+      try {
+        const res = await fetch("/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+        if (!res.ok) throw new Error("Please check your inputs.");
+        const r = await res.json();
+        out.innerHTML = `<h2>Your advice</h2>
+          <p class="muted">Predicted standing</p>
+          <p class="standing">${r.standing}</p>
+          <p class="muted">CGPA band ${r.gpa_band} · model confidence ${r.confidence}%</p>
+          <h3>Recommendations</h3><ul>${r.advice.map(t => `<li>${t}</li>`).join("")}</ul>`;
+      } catch (err) {
+        out.innerHTML = `<h2>Your advice</h2><p class="error">${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
